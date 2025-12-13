@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCards - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <h1>🎴 CodeCards Dashboard</h1>
+            <p class="tagline">Manage your coding flashcards</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Stats Section -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <h3 id="totalCards">0</h3>
+                <p>Total Cards</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="javaCards">0</h3>
+                <p>Java Cards</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="dsaCards">0</h3>
+                <p>DSA Cards</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="customCards">0</h3>
+                <p>Custom Cards</p>
+            </div>
+        </section>
+
+        <!-- Add Card Section -->
+        <section class="add-card-section">
+            <h2>➕ Add New Flashcard</h2>
+            <form id="addCardForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="frontInput">Front (Question)</label>
+                        <input type="text" id="frontInput" placeholder="e.g., How to reverse a string in Java?" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryInput">Category</label>
+                        <select id="categoryInput" required>
+                            <option value="Java">Java</option>
+                            <option value="DSA">DSA</option>
+                            <option value="C">C</option>
+                            <option value="HTML/CSS">HTML/CSS</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="backInput">Back (Answer/Code)</label>
+                    <textarea id="backInput" rows="4" placeholder="e.g., new StringBuilder(str).reverse().toString()" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Add Card</button>
+            </form>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="filter-section">
+            <h2>📋 Your Flashcards</h2>
+            <div class="filter-controls">
+                <label for="filterCategory">Filter by Category:</label>
+                <select id="filterCategory">
+                    <option value="all">All Categories</option>
+                    <option value="Java">Java</option>
+                    <option value="DSA">DSA</option>
+                    <option value="C">C</option>
+                    <option value="HTML/CSS">HTML/CSS</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="🔍 Search cards...">
+            </div>
+        </section>
+
+        <!-- Cards Display Section -->
+        <section class="cards-grid" id="cardsGrid">
+            <!-- Cards will be dynamically inserted here -->
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>Built for WeMakeDevs Hackathon 2025 | Deployed on Vercel 🚀</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
