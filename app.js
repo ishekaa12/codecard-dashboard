@@ -24,45 +24,58 @@ const defaultCards = [
 
 let allCards = [];
 let customCards = [];
+let categoryChart = null;
+
+// Practice mode variables
+let practiceMode = false;
+let practiceCards = [];
+let currentPracticeIndex = 0;
+let knownCards = [];
+let reviewCards = [];
+
+// SYNC KEY - This connects dashboard with extension
+const SYNC_KEY = 'codecards_sync';
 
 // Initialize app
 function init() {
     loadCards();
     setupEventListeners();
+    createCategoryChart();
 }
 
-// Load cards from chrome.storage (syncs with newtab extension)
+// Load cards from localStorage with SYNC
 function loadCards() {
-    // Check if chrome.storage is available (Chrome extension context)
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.get(['customCards'], (result) => {
-            customCards = result.customCards || [];
-            allCards = [...defaultCards, ...customCards];
-            updateStats();
-            displayCards();
-        });
+    // Try to load from sync storage first (shared with extension)
+    const syncedData = localStorage.getItem(SYNC_KEY);
+    
+    if (syncedData) {
+        try {
+            customCards = JSON.parse(syncedData);
+        } catch (e) {
+            customCards = [];
+        }
     } else {
-        // Fallback to localStorage for standalone web version
+        // Fallback to old storage
         const stored = localStorage.getItem('flashcards');
         customCards = stored ? JSON.parse(stored) : [];
-        allCards = [...defaultCards, ...customCards];
-        updateStats();
-        displayCards();
     }
+    
+    // Combine default + custom cards
+    allCards = [...defaultCards, ...customCards];
+    
+    // Update UI
+    updateStats();
+    displayCards();
+    updateCategoryChart();
 }
 
-// Save cards to chrome.storage (syncs with newtab extension)
-function saveCards(callback) {
-    // Check if chrome.storage is available (Chrome extension context)
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({ customCards }, () => {
-            if (callback) callback();
-        });
-    } else {
-        // Fallback to localStorage for standalone web version
-        localStorage.setItem('flashcards', JSON.stringify(customCards));
-        if (callback) callback();
-    }
+// Save cards to localStorage with SYNC
+function saveCards() {
+    // Save to sync key (shared with extension)
+    localStorage.setItem(SYNC_KEY, JSON.stringify(customCards));
+    
+    // Also save to old key for backward compatibility
+    localStorage.setItem('flashcards', JSON.stringify(customCards));
 }
 
 // Update statistics
@@ -76,6 +89,63 @@ function updateStats() {
     document.getElementById('javaCards').textContent = javaCount;
     document.getElementById('dsaCards').textContent = dsaCount;
     document.getElementById('customCards').textContent = customCards.length;
+}
+
+// Create pie chart
+function createCategoryChart() {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    
+    categoryChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#4facfe',
+                    '#43e97b'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 14
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    updateCategoryChart();
+}
+
+// Update pie chart data
+function updateCategoryChart() {
+    if (!categoryChart) return;
+    
+    // Count cards per category
+    const categoryCounts = {};
+    allCards.forEach(card => {
+        categoryCounts[card.category] = (categoryCounts[card.category] || 0) + 1;
+    });
+    
+    // Update chart
+    categoryChart.data.labels = Object.keys(categoryCounts);
+    categoryChart.data.datasets[0].data = Object.values(categoryCounts);
+    categoryChart.update();
 }
 
 // Display cards in grid
@@ -146,13 +216,14 @@ function setupEventListeners() {
         };
         
         customCards.push(newCard);
-        saveCards(() => {
-            loadCards();
-            // Clear form
-            document.getElementById('addCardForm').reset();
-            // Show success message
-            alert('Card added successfully! 🎉');
-        });
+        saveCards();
+        loadCards();
+        
+        // Clear form
+        document.getElementById('addCardForm').reset();
+        
+        // Show success message
+        alert('Card added successfully! 🎉');
     });
     
     // Filter by category
@@ -166,6 +237,89 @@ function setupEventListeners() {
         const filterCategory = document.getElementById('filterCategory').value;
         displayCards(filterCategory, e.target.value);
     });
+    
+    // Practice mode buttons
+    document.getElementById('startPracticeBtn').addEventListener('click', startPracticeMode);
+    document.getElementById('exitPracticeBtn').addEventListener('click', exitPracticeMode);
+    document.getElementById('revealBtn').addEventListener('click', revealAnswer);
+    document.getElementById('knowItBtn').addEventListener('click', markKnown);
+    document.getElementById('needReviewBtn').addEventListener('click', markReview);
+}
+
+// Practice Mode Functions
+function startPracticeMode() {
+    practiceMode = true;
+    currentPracticeIndex = 0;
+    knownCards = [];
+    reviewCards = [];
+    
+    // Shuffle all cards for practice
+    practiceCards = [...allCards].sort(() => Math.random() - 0.5);
+    
+    // Hide main sections
+    document.querySelector('.add-card-section').style.display = 'none';
+    document.querySelector('.filter-section').style.display = 'none';
+    document.querySelector('.cards-grid').style.display = 'none';
+    document.querySelector('.chart-section').style.display = 'none';
+    
+    // Show practice section
+    document.getElementById('practiceSection').style.display = 'block';
+    
+    showPracticeCard();
+}
+
+function exitPracticeMode() {
+    practiceMode = false;
+    
+    // Show summary
+    alert(`Practice Complete!\n\n✅ Known: ${knownCards.length}\n❌ Need Review: ${reviewCards.length}\n\nKeep practicing! 💪`);
+    
+    // Show main sections
+    document.querySelector('.add-card-section').style.display = 'block';
+    document.querySelector('.filter-section').style.display = 'block';
+    document.querySelector('.cards-grid').style.display = 'grid';
+    document.querySelector('.chart-section').style.display = 'block';
+    
+    // Hide practice section
+    document.getElementById('practiceSection').style.display = 'none';
+}
+
+function showPracticeCard() {
+    if (currentPracticeIndex >= practiceCards.length) {
+        exitPracticeMode();
+        return;
+    }
+    
+    const card = practiceCards[currentPracticeIndex];
+    
+    document.getElementById('practiceProgress').textContent = 
+        `Card ${currentPracticeIndex + 1} of ${practiceCards.length}`;
+    document.getElementById('practiceCategory').textContent = card.category;
+    document.getElementById('practiceQuestion').textContent = card.front;
+    document.getElementById('practiceAnswer').textContent = card.back;
+    
+    // Reset view
+    document.getElementById('practiceAnswer').style.display = 'none';
+    document.getElementById('revealBtn').style.display = 'block';
+    document.getElementById('practiceActions').style.display = 'none';
+}
+
+function revealAnswer() {
+    document.getElementById('practiceAnswer').style.display = 'block';
+    document.getElementById('revealBtn').style.display = 'none';
+    document.getElementById('practiceActions').style.display = 'flex';
+}
+
+function markKnown() {
+    knownCards.push(practiceCards[currentPracticeIndex]);
+    currentPracticeIndex++;
+    showPracticeCard();
+}
+
+function markReview() {
+    reviewCards.push(practiceCards[currentPracticeIndex]);
+    currentPracticeIndex++;
+    showPracticeCard();
 }
 
 // Edit card
@@ -184,20 +338,18 @@ window.editCard = function(index) {
         back: newBack.trim()
     };
     
-    saveCards(() => {
-        loadCards();
-        alert('Card updated! ✅');
-    });
+    saveCards();
+    loadCards();
+    alert('Card updated! ✅');
 };
 
 // Delete card
 window.deleteCard = function(index) {
     if (confirm('Delete this card?')) {
         customCards.splice(index, 1);
-        saveCards(() => {
-            loadCards();
-            alert('Card deleted! 🗑️');
-        });
+        saveCards();
+        loadCards();
+        alert('Card deleted! 🗑️');
     }
 };
 
