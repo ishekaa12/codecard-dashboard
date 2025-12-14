@@ -498,17 +498,49 @@ function importCards(e) {
                 return;
             }
             
-            // Ask user if they want to merge or replace
-            const action = confirm('Click OK to ADD these cards to existing ones.\nClick Cancel to REPLACE all cards.');
+            // Ask user what they want to do
+            const choice = prompt(
+                'Import Options:\n' +
+                '1 - REPLACE all custom cards with imported ones\n' +
+                '2 - ADD only NEW cards (skip duplicates)\n' +
+                '3 - ADD ALL imported cards (merge with existing)\n\n' +
+                'Enter 1, 2, or 3:',
+                '1'
+            );
             
-            if (action) {
-                // Merge: add imported cards
+            if (choice === null) return; // User cancelled
+            
+            if (choice === '1') {
+                // Replace: overwrite all custom cards with imported ones
+                customCards = importedCards;
+                alert(`Replaced with ${importedCards.length} cards! 🎉`);
+            } else if (choice === '2') {
+                // Add only new cards (avoid duplicates)
+                const existingFronts = new Set(customCards.map(card => 
+                    `${card.front.toLowerCase()}|${card.back.toLowerCase()}`
+                ));
+                
+                const newCards = importedCards.filter(card => {
+                    const key = `${card.front.toLowerCase()}|${card.back.toLowerCase()}`;
+                    return !existingFronts.has(key);
+                });
+                
+                if (newCards.length === 0) {
+                    alert('No new cards to add. All imported cards already exist.');
+                    e.target.value = ''; // Reset file input
+                    return;
+                }
+                
+                customCards = [...customCards, ...newCards];
+                alert(`Added ${newCards.length} new card(s)! 🎉\n(Skipped ${importedCards.length - newCards.length} duplicate(s))`);
+            } else if (choice === '3') {
+                // Merge: add all imported cards
                 customCards = [...customCards, ...importedCards];
                 alert(`Added ${importedCards.length} cards! 🎉`);
             } else {
-                // Replace: overwrite all cards
-                customCards = importedCards;
-                alert(`Replaced with ${importedCards.length} cards! 🎉`);
+                alert('Invalid choice. Import cancelled.');
+                e.target.value = ''; // Reset file input
+                return;
             }
             
             saveCards();
