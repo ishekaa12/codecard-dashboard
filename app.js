@@ -60,6 +60,18 @@ function loadCards() {
         customCards = stored ? JSON.parse(stored) : [];
     }
     
+    // Migrate old "HTML/CSS" category to "HTML"
+    let needsSave = false;
+    customCards.forEach(card => {
+        if (card.category === 'HTML/CSS') {
+            card.category = 'HTML';
+            needsSave = true;
+        }
+    });
+    if (needsSave) {
+        saveCards();
+    }
+    
     // Combine default + custom cards
     allCards = [...defaultCards, ...customCards];
     
@@ -102,11 +114,16 @@ function createCategoryChart() {
             datasets: [{
                 data: [],
                 backgroundColor: [
-                    '#667eea',
+                    '#04094b',
                     '#764ba2',
                     '#f093fb',
                     '#4facfe',
-                    '#43e97b'
+                    '#43e97b',
+                    '#ff6b6b',
+                    '#4ecdc4',
+                    '#ffe66d',
+                    '#95e1d3',
+                    '#f38181'
                 ],
                 borderWidth: 2,
                 borderColor: '#fff'
@@ -185,19 +202,46 @@ function displayCards(filterCategory = 'all', searchTerm = '') {
         
         const cardElement = document.createElement('div');
         cardElement.className = 'card';
-        cardElement.innerHTML = `
-            <div class="card-header">
-                <span class="card-category">${card.category}</span>
-                <div class="card-actions">
-                    ${!isDefault ? `
-                        <button class="edit-btn" onclick="editCard(${actualIndex})">✏️ Edit</button>
-                        <button class="delete-btn" onclick="deleteCard(${actualIndex})">🗑️</button>
-                    ` : ''}
-                </div>
-            </div>
-            <div class="card-front">${card.front}</div>
-            <div class="card-back">${card.back}</div>
-        `;
+        
+        // Create card structure
+        const cardHeader = document.createElement('div');
+        cardHeader.className = 'card-header';
+        
+        const categorySpan = document.createElement('span');
+        categorySpan.className = 'card-category';
+        categorySpan.textContent = card.category;
+        cardHeader.appendChild(categorySpan);
+        
+        if (!isDefault) {
+            const cardActions = document.createElement('div');
+            cardActions.className = 'card-actions';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = '✏️ Edit';
+            editBtn.onclick = () => editCard(actualIndex);
+            cardActions.appendChild(editBtn);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.onclick = () => deleteCard(actualIndex);
+            cardActions.appendChild(deleteBtn);
+            
+            cardHeader.appendChild(cardActions);
+        }
+        
+        const cardFront = document.createElement('div');
+        cardFront.className = 'card-front';
+        cardFront.textContent = card.front;
+        
+        const cardBack = document.createElement('div');
+        cardBack.className = 'card-back';
+        cardBack.textContent = card.back || '(No answer provided)';
+        
+        cardElement.appendChild(cardHeader);
+        cardElement.appendChild(cardFront);
+        cardElement.appendChild(cardBack);
         
         cardsGrid.appendChild(cardElement);
     });
@@ -206,44 +250,93 @@ function displayCards(filterCategory = 'all', searchTerm = '') {
 // Setup event listeners
 function setupEventListeners() {
     // Add card form
-    document.getElementById('addCardForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const newCard = {
-            front: document.getElementById('frontInput').value.trim(),
-            back: document.getElementById('backInput').value.trim(),
-            category: document.getElementById('categoryInput').value
-        };
-        
-        customCards.push(newCard);
-        saveCards();
-        loadCards();
-        
-        // Clear form
-        document.getElementById('addCardForm').reset();
-        
-        // Show success message
-        alert('Card added successfully! 🎉');
-    });
+    const addCardForm = document.getElementById('addCardForm');
+    if (addCardForm) {
+        addCardForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newCard = {
+                front: document.getElementById('frontInput').value.trim(),
+                back: document.getElementById('backInput').value.trim(),
+                category: document.getElementById('categoryInput').value
+            };
+            
+            customCards.push(newCard);
+            saveCards();
+            loadCards();
+            
+            // Clear form
+            document.getElementById('addCardForm').reset();
+            
+            // Show success message
+            alert('Card added successfully! 🎉');
+        });
+    }
     
     // Filter by category
-    document.getElementById('filterCategory').addEventListener('change', (e) => {
-        const searchTerm = document.getElementById('searchInput').value;
-        displayCards(e.target.value, searchTerm);
-    });
+    const filterCategory = document.getElementById('filterCategory');
+    if (filterCategory) {
+        filterCategory.addEventListener('change', (e) => {
+            const searchTerm = document.getElementById('searchInput').value;
+            displayCards(e.target.value, searchTerm);
+        });
+    }
     
     // Search
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const filterCategory = document.getElementById('filterCategory').value;
-        displayCards(filterCategory, e.target.value);
-    });
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const filterCategory = document.getElementById('filterCategory').value;
+            displayCards(filterCategory, e.target.value);
+        });
+    }
     
     // Practice mode buttons
-    document.getElementById('startPracticeBtn').addEventListener('click', startPracticeMode);
-    document.getElementById('exitPracticeBtn').addEventListener('click', exitPracticeMode);
-    document.getElementById('revealBtn').addEventListener('click', revealAnswer);
-    document.getElementById('knowItBtn').addEventListener('click', markKnown);
-    document.getElementById('needReviewBtn').addEventListener('click', markReview);
+    const startPracticeBtn = document.getElementById('startPracticeBtn');
+    if (startPracticeBtn) {
+        startPracticeBtn.addEventListener('click', startPracticeMode);
+    }
+    
+    const exitPracticeBtn = document.getElementById('exitPracticeBtn');
+    if (exitPracticeBtn) {
+        exitPracticeBtn.addEventListener('click', exitPracticeMode);
+    }
+    
+    const revealBtn = document.getElementById('revealBtn');
+    if (revealBtn) {
+        revealBtn.addEventListener('click', revealAnswer);
+    }
+    
+    const knowItBtn = document.getElementById('knowItBtn');
+    if (knowItBtn) {
+        knowItBtn.addEventListener('click', markKnown);
+    }
+    
+    const needReviewBtn = document.getElementById('needReviewBtn');
+    if (needReviewBtn) {
+        needReviewBtn.addEventListener('click', markReview);
+    }
+    
+    // Export/Import buttons
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportCards);
+    }
+    
+    const importBtn = document.getElementById('importBtn');
+    if (importBtn) {
+        importBtn.addEventListener('click', () => {
+            const importFile = document.getElementById('importFile');
+            if (importFile) {
+                importFile.click();
+            }
+        });
+    }
+    
+    const importFile = document.getElementById('importFile');
+    if (importFile) {
+        importFile.addEventListener('change', importCards);
+    }
 }
 
 // Practice Mode Functions
@@ -332,10 +425,26 @@ window.editCard = function(index) {
     const newBack = prompt('Edit Back:', card.back);
     if (newBack === null) return;
     
+    // Category selection
+    const categories = ['Java', 'DSA', 'C', 'HTML', 'CSS', 'Other'];
+    let categoryPrompt = 'Edit Category (enter number):\n';
+    categories.forEach((cat, i) => {
+        categoryPrompt += `${i + 1}. ${cat}${cat === card.category ? ' (current)' : ''}\n`;
+    });
+    
+    const categoryChoice = prompt(categoryPrompt, categories.indexOf(card.category) + 1);
+    if (categoryChoice === null) return;
+    
+    const categoryIndex = parseInt(categoryChoice) - 1;
+    const newCategory = (categoryIndex >= 0 && categoryIndex < categories.length) 
+        ? categories[categoryIndex] 
+        : card.category;
+    
     customCards[index] = {
         ...card,
         front: newFront.trim(),
-        back: newBack.trim()
+        back: newBack.trim(),
+        category: newCategory
     };
     
     saveCards();
@@ -354,4 +463,63 @@ window.deleteCard = function(index) {
 };
 
 // Initialize when page loads
-init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    // DOM is already ready
+    init();
+}
+
+// Export cards as JSON
+function exportCards() {
+    const dataStr = JSON.stringify(customCards, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'codecards-backup.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    alert('Cards exported! 📥\nYou can import this file in your extension.');
+}
+
+// Import cards from JSON
+function importCards(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const importedCards = JSON.parse(event.target.result);
+            
+            if (!Array.isArray(importedCards)) {
+                alert('Invalid file format!');
+                return;
+            }
+            
+            // Ask user if they want to merge or replace
+            const action = confirm('Click OK to ADD these cards to existing ones.\nClick Cancel to REPLACE all cards.');
+            
+            if (action) {
+                // Merge: add imported cards
+                customCards = [...customCards, ...importedCards];
+                alert(`Added ${importedCards.length} cards! 🎉`);
+            } else {
+                // Replace: overwrite all cards
+                customCards = importedCards;
+                alert(`Replaced with ${importedCards.length} cards! 🎉`);
+            }
+            
+            saveCards();
+            loadCards();
+            
+        } catch (error) {
+            alert('Error reading file! Make sure it\'s a valid JSON file.');
+        }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    e.target.value = '';
+}

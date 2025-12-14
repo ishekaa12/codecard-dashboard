@@ -38,9 +38,47 @@
             </div>
         </section>
 
+        <!-- Chart Section -->
+        <section class="chart-section">
+            <h2>📊 Cards by Category</h2>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Practice Mode Section -->
+        <section class="practice-section" id="practiceSection" style="display: none;">
+            <div class="practice-card">
+                <div class="practice-header">
+                    <h2>🎯 Practice Mode</h2>
+                    <button class="btn-secondary" id="exitPracticeBtn">Exit Practice</button>
+                </div>
+                <div class="practice-progress">
+                    <span id="practiceProgress">Card 1 of 20</span>
+                </div>
+                <div class="practice-card-content" id="practiceCardContent">
+                    <div class="practice-category" id="practiceCategory">JAVA</div>
+                    <div class="practice-question" id="practiceQuestion">Loading...</div>
+                    <div class="practice-answer" id="practiceAnswer" style="display: none;">Answer here</div>
+                    <button class="btn-primary" id="revealBtn">Reveal Answer</button>
+                </div>
+                <div class="practice-actions" id="practiceActions" style="display: none;">
+                    <button class="btn-success" id="knowItBtn">✅ I Know This</button>
+                    <button class="btn-danger" id="needReviewBtn">❌ Need Review</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Add Card Section -->
         <section class="add-card-section">
-            <h2>➕ Add New Flashcard</h2>
+            <div class="section-header">
+                <h2>➕ Add New Flashcard</h2>
+                <div class="sync-buttons">
+                    <button type="button" class="btn-secondary" id="exportBtn">📥 Export Cards</button>
+                    <button type="button" class="btn-secondary" id="importBtn">📤 Import Cards</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
             <form id="addCardForm">
                 <div class="form-row">
                     <div class="form-group">
@@ -53,7 +91,8 @@
                             <option value="Java">Java</option>
                             <option value="DSA">DSA</option>
                             <option value="C">C</option>
-                            <option value="HTML/CSS">HTML/CSS</option>
+                            <option value="HTML">HTML</option>
+                            <option value="CSS">CSS</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
@@ -68,7 +107,10 @@
 
         <!-- Filter Section -->
         <section class="filter-section">
-            <h2>📋 Your Flashcards</h2>
+            <div class="filter-header">
+                <h2>📋 Your Flashcards</h2>
+                <button class="btn-primary" id="startPracticeBtn">🎯 Start Practice Mode</button>
+            </div>
             <div class="filter-controls">
                 <label for="filterCategory">Filter by Category:</label>
                 <select id="filterCategory">
@@ -76,7 +118,8 @@
                     <option value="Java">Java</option>
                     <option value="DSA">DSA</option>
                     <option value="C">C</option>
-                    <option value="HTML/CSS">HTML/CSS</option>
+                    <option value="HTML">HTML</option>
+                    <option value="CSS">CSS</option>
                     <option value="Other">Other</option>
                 </select>
                 <input type="text" id="searchInput" placeholder="🔍 Search cards...">
